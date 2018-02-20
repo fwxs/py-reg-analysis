@@ -73,11 +73,11 @@ def get_device_class_guid(instance_id):
 
 def get_windows_time(windows_time):
     """
-        Return a readable date time.
+        Converts a windows time to a UTC time.
         @param windows_time: 64-bits Windows timestamp.
     """
     time = datetime.datetime(1601,1,1) + datetime.timedelta(microseconds=windows_time//10)
-    return time.ctime()
+    return "{0} UTC".format(time.ctime())
 
 
 def get_first_attached_date(device_class_guid, instance_id):
