@@ -1,4 +1,5 @@
 import datetime
+import sys
 import time
 import winreg as reg
 
@@ -31,6 +32,33 @@ NOT_READABLE_CHARS = [chr(character) for character in range(0, 32)]
 NOT_READABLE_CHARS += [chr(character) for character in range(33, 40)]
 NOT_READABLE_CHARS += ["*", ">", "<", "\"", ":", "?", "\\", "/", "|"]
 NOT_READABLE_CHARS += ["^", "=", "@", "}", "{", ";", "[", "]", "+"]
+
+
+def user2sid(user_name):
+    """
+        Returns the user id of the provided user name.
+        @param user_id: The user name.
+    """
+    path = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
+
+    # Opens the specified key path.
+    with reg.OpenKeyEx(reg.HKEY_LOCAL_MACHINE, path) as key:
+
+        # Iterates through each sub key.
+        for inx in range(reg.QueryInfoKey(key)[0]):
+            
+            key_name = reg.EnumKey(key, inx)
+
+            # Retrieves information of the provided profile key.
+            with reg.OpenKeyEx(key, key_name) as user_key:
+
+                # Get the name of the user from its profileImagePath key value.
+                profile_image_path = reg.QueryValueEx(user_key, "ProfileImagePath")[0]
+                user_name_index = profile_image_path.rfind("\\") + 1
+
+                # Return the user identification if it matches the provided user name
+                if user_name.lower() in profile_image_path[user_name_index:].lower():
+                    return key_name
 
 
 def get_time(windows_time):
@@ -187,7 +215,7 @@ def recent_docs(user_sid):
     return files, root_last_modified_date
 
 
-if __name__ == "__main__":
+def print_all_users_mru():
     for user_sid in users_list():
 
         mru_user_data = recent_docs(user_sid)
@@ -207,3 +235,37 @@ if __name__ == "__main__":
             print("\t[+] Last accessed date: {0}".format(last_accessed_date))
             for file in files:
                 print("\t\t[-] File:", file)
+
+
+def print_single_user_mru(user_name):
+    user_id = user2sid(user_name)
+
+    if user_id is None:
+        print("Error: User doesn't exists", file=sys.stderr)
+        sys.exit()
+
+    mru_user_data = recent_docs(user_id)
+
+    if len(mru_user_data[0]) == 0:
+        print("It seems that {0} doesn't have a 'most recent files' history.".format(user_id))
+        sys.exit()
+
+    print("[*] Showing MRU docs for user {0} -> id: ".format(user_id))
+    print("[+] Last modified date of the root key:", mru_user_data[1])
+
+    for key, value in mru_user_data[0].items():
+        files, last_accessed_date = value[0], value[1]
+
+        print("\n\t[+] Showing files for extention: {0}".format(key))
+        print("\t[!!] Files are shown from the most recent to the oldest one.")
+        print("\t[+] Last accessed date: {0}".format(last_accessed_date))
+
+        for file in files:
+            print("\t\t[-] File:", file)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print_all_users_mru()
+
+    else:
+        print_single_user_mru(sys.argv[1])
