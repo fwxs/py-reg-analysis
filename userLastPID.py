@@ -1,3 +1,4 @@
+import argparse
 import sys
 import utils
 import winreg as reg
@@ -77,13 +78,14 @@ def last_pid(user_sid, verbose):
 
 def print_all_users_lpids(verbose):
     for user_sid in utils.users_list():
+        user_name = utils.get_user_name(user_sid)[1]
         processes_info = last_pid(user_sid, verbose=verbose)
 
         if len(processes_info[1]) == 0:
-            print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_sid))
+            print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_name))
             continue
 
-        print("\n[*] Showing last executed processes of user {0}.".format(user_sid))
+        print("\n[*] Showing last executed processes of user {0} -> id: {1}.".format(user_name, user_sid))
         print("[*] Last write time: {0}".format( processes_info[0]))
         print("[!!] Process are shown from most recent to the older one.\n")
 
@@ -101,7 +103,6 @@ def print_all_users_lpids(verbose):
 def print_single_user_lpd(user_name, verbose):
 
     user_id = utils.user2sid(user_name)
-
     if user_id is None:
         print("Error: User doesn't exists", file=sys.stderr)
         sys.exit()
@@ -112,7 +113,7 @@ def print_single_user_lpd(user_name, verbose):
         print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_name))
         return False
 
-    print("\n[*] Showing last executed processes of user {0} -> id: {1}.".format(user_name, user_id))
+    print("[*] Showing last executed processes of user {0} -> id: {1}.".format(user_name, user_id))
     print("[*] Last write time: {0}".format( processes_info[0]))
     print("[!!] Process are shown from most recent to the older one.\n")
 
@@ -128,12 +129,13 @@ def print_single_user_lpd(user_name, verbose):
 
 
 if __name__ == '__main__':
-    verbose = False
+    parser = argparse.ArgumentParser(description="Python script to print a list of the last processes executed by some user.")
+    parser.add_argument("-v", dest="verbose", action="store_true", help="Print a raw version of the key value.")
+    parser.add_argument("-u", dest="user", action="store", help="User name to get the last processes from.")
 
-    if "-v" in sys.argv:
-        verbose = True
-    
-    if len(sys.argv) > 2:
-        print_single_user_lpd(sys.argv[1], verbose)
+    args = parser.parse_args()
+
+    if args.user is None:
+        print_all_users_lpids(args.verbose)
     else:
-        print_all_users_lpids(verbose)
+        print_single_user_lpd(args.user, args.verbose)
