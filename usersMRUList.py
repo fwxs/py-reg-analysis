@@ -1,6 +1,5 @@
-import datetime
 import sys
-import time
+import utils
 import winreg as reg
 
 
@@ -27,100 +26,6 @@ __version__ = "v1.0"
 """
 
 
-# Not readable characters to name a file or directory
-NOT_READABLE_CHARS = [chr(character) for character in range(0, 32)]
-NOT_READABLE_CHARS += [chr(character) for character in range(33, 40)]
-NOT_READABLE_CHARS += ["*", ">", "<", "\"", ":", "?", "\\", "/", "|"]
-NOT_READABLE_CHARS += ["^", "=", "@", "}", "{", ";", "[", "]", "+"]
-
-
-def user2sid(user_name):
-    """
-        Returns the user id of the provided user name.
-        @param user_id: The user name.
-    """
-    path = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
-
-    # Opens the specified key path.
-    with reg.OpenKeyEx(reg.HKEY_LOCAL_MACHINE, path) as key:
-
-        # Iterates through each sub key.
-        for inx in range(reg.QueryInfoKey(key)[0]):
-            
-            key_name = reg.EnumKey(key, inx)
-
-            # Retrieves information of the provided profile key.
-            with reg.OpenKeyEx(key, key_name) as user_key:
-
-                # Get the name of the user from its profileImagePath key value.
-                profile_image_path = reg.QueryValueEx(user_key, "ProfileImagePath")[0]
-                user_name_index = profile_image_path.rfind("\\") + 1
-
-                # Return the user identification if it matches the provided user name
-                if user_name.lower() in profile_image_path[user_name_index:].lower():
-                    return key_name
-
-
-def get_time(windows_time):
-    """
-        Converts a windows time to a UTC time.
-        @param windows_time: 64-bits Windows timestamp.
-    """
-    time = datetime.datetime(1601,1,1) + datetime.timedelta(microseconds=windows_time//10)
-    return "{0} UTC".format(time.ctime())
-
-
-def users_list():
-    """ 
-        Returns the sid of non-system users.
-    """
-    # A list of existing users.
-    users = list()
-
-    # Path to the users profile list HKEY.
-    PATH = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList"
-
-    # Open the users HKEY with the Profile list path as sub key.
-    with reg.OpenKeyEx(reg.HKEY_LOCAL_MACHINE, PATH) as userList:
-
-        # Obtain the amount of sub keys in the userList HKEY.
-        numSubKeys = reg.QueryInfoKey(userList)[0]
-
-        for user in range(0, numSubKeys):
-            
-            # Excludes the system accounts.
-            if reg.EnumKey(userList, user).startswith("S-1-5-21"):
-                users.append(reg.EnumKey(userList, user))
-            else:
-                continue
-
-    return users
-
-
-def remove_chars(key_value):
-    """ This function removes the not readable characters and
-        the not allowed files characters from a string.
-    """
-    filename = list()
-    for byte in key_value:
-
-        try:
-            char = chr(byte).encode('utf-8')
-            readable_char = chr(ord(char))
-
-            if not (readable_char in NOT_READABLE_CHARS):
-                filename.append(readable_char)
-            else:
-                continue
-
-        # Some windows registry keys has a two-bytes value
-        # this exception skips that encoding error.
-        except TypeError:
-            continue
-
-    return "".join(filename)
-
-
 def get_filename(filename, file_extension):
     """
         Returns the filename of the provided RecentDocs key value.
@@ -130,25 +35,6 @@ def get_filename(filename, file_extension):
     # Index where the file extension begins.
     file_extension_inx = filename.lower().find(file_extension.lower())
     return filename[:file_extension_inx + len(file_extension)]
-
-
-def parse_mru_inx(mru_list_ex):
-    """
-        Return an index of the most recently opened files.
-        @param mru_list_ex: MRUListEx value.
-    """
-    # MRU files index.
-    file_inx = list()
-
-    # Iterates through the whole MRUListEx value in bytes chunks.
-    for inx in range(0, len(mru_list_ex) - 4, 4):
-        # Divides de MRUListEx into chunks of 4 bytes.
-        chunk = mru_list_ex[inx:inx + 4]
-
-        # Adds the hexadecimal values of the provided MRUListEx chunk.
-        file_inx.append(sum([chunk[inx]  for inx in range(4)]))
-
-    return file_inx
 
 
 def get_recent_docs(key, file_extension):
@@ -165,14 +51,14 @@ def get_recent_docs(key, file_extension):
         mru_list_ex = reg.QueryValueEx(file_extension_key, "MRUListEx")[0]
 
         # Get the last time this key was modified.
-        last_accessed_key_date = get_time(reg.QueryInfoKey(file_extension_key)[2])
+        last_accessed_key_date = utils.get_time(reg.QueryInfoKey(file_extension_key)[2])
 
-        for file_index in parse_mru_inx(mru_list_ex):
+        for file_index in utils.parse_mru_inx(mru_list_ex):
             # I have no idea how to call this variable...
             mru_unit = reg.QueryValueEx(file_extension_key, str(file_index))[0]
 
             # Remove all unreadable characters from the filename.
-            filename = get_filename(remove_chars(mru_unit), file_extension)
+            filename = get_filename(utils.remove_chars(mru_unit), file_extension)
             recent_docs.append(filename)
     
         return recent_docs, last_accessed_key_date
@@ -200,7 +86,7 @@ def recent_docs(user_sid):
 
             # Enumerates all the recent files extensions and saves them on a list.
             files_extensions = [reg.EnumKey(mru_key, ext) for ext in range(0, num_sub_keys)]
-            root_last_modified_date = get_time(reg.QueryInfoKey(mru_key)[2])
+            root_last_modified_date = utils.get_time(reg.QueryInfoKey(mru_key)[2])
 
             for file_extension in files_extensions:
                 # Skip the folder subkey.
@@ -216,7 +102,7 @@ def recent_docs(user_sid):
 
 
 def print_all_users_mru():
-    for user_sid in users_list():
+    for user_sid in utils.users_list():
 
         mru_user_data = recent_docs(user_sid)
 
@@ -238,7 +124,7 @@ def print_all_users_mru():
 
 
 def print_single_user_mru(user_name):
-    user_id = user2sid(user_name)
+    user_id = utils.user2sid(user_name)
 
     if user_id is None:
         print("Error: User doesn't exists", file=sys.stderr)
@@ -262,6 +148,7 @@ def print_single_user_mru(user_name):
 
         for file in files:
             print("\t\t[-] File:", file)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

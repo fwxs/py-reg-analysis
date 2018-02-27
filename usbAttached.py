@@ -1,4 +1,4 @@
-import datetime
+import utils
 import winreg as reg
 
 
@@ -71,15 +71,6 @@ def get_device_class_guid(instance_id):
                 return key_name[guid_inx:]
 
 
-def get_windows_time(windows_time):
-    """
-        Converts a windows time to a UTC time.
-        @param windows_time: 64-bits Windows timestamp.
-    """
-    time = datetime.datetime(1601,1,1) + datetime.timedelta(microseconds=windows_time//10)
-    return "{0} UTC".format(time.ctime())
-
-
 def get_first_attached_date(device_class_guid, instance_id):
     """
         Get the first time a USB drive was attached to the system.
@@ -98,7 +89,7 @@ def get_first_attached_date(device_class_guid, instance_id):
                 with reg.OpenKeyEx(key, key_name) as device_key:
                     # Store last accessed time.
                     windows_time = reg.QueryInfoKey(device_key)[2]
-                    return get_windows_time(windows_time)
+                    return utils.get_time(windows_time)
 
 
 def get_device_name(instance_id):

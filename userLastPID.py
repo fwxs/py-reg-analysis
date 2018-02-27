@@ -1,5 +1,5 @@
 import sys
-import usersMRUList as mru
+import utils
 import winreg as reg
 
 
@@ -56,17 +56,17 @@ def last_pid(user_sid, verbose):
         processes = list()
         with reg.OpenKeyEx(reg.HKEY_USERS, path, 0, reg.KEY_READ) as key:
 
-            last_write_time = mru.get_time(reg.QueryInfoKey(key)[2])
+            last_write_time = utils.get_time(reg.QueryInfoKey(key)[2])
 
-            for mru_inx in mru.parse_mru_inx(reg.QueryValueEx(key, "MRUListEx")[0]):
+            for mru_inx in utils.parse_mru_inx(reg.QueryValueEx(key, "MRUListEx")[0]):
                 # Remove not readable chars from the registry value.
 
                 if verbose:
-                    process_data = mru.remove_chars(reg.QueryValueEx(key, str(mru_inx))[0])
+                    process_data = utils.remove_chars(reg.QueryValueEx(key, str(mru_inx))[0])
                     process_name = get_process_name(process_data)
                     processes.append("{0}\n\t\t[-]Verbose data: {1}\n".format(process_name, process_data))
                 else:
-                    process_data = mru.remove_chars(reg.QueryValueEx(key, str(mru_inx))[0])
+                    process_data = utils.remove_chars(reg.QueryValueEx(key, str(mru_inx))[0])
                     processes.append(get_process_name(process_data))
 
     except FileNotFoundError:
@@ -75,13 +75,8 @@ def last_pid(user_sid, verbose):
     return last_write_time, processes
 
 
-if __name__ == '__main__':
-    verbose = False
-
-    if (len(sys.argv) == 2) and (sys.argv[1] == "-v"):
-        verbose = True
-
-    for user_sid in mru.users_list():
+def print_all_users_lpids(verbose):
+    for user_sid in utils.users_list():
         processes_info = last_pid(user_sid, verbose=verbose)
 
         if len(processes_info[1]) == 0:
@@ -101,3 +96,43 @@ if __name__ == '__main__':
                 newline_countdown = 0
             
             newline_countdown += 1
+
+
+def print_single_user_lpd(user_name, verbose):
+
+    user_id = utils.user2sid(user_name)
+
+    if user_id is None:
+        print("Error: User doesn't exists", file=sys.stderr)
+        sys.exit()
+
+    processes_info = last_pid(user_id, verbose=verbose)
+
+    if len(processes_info[1]) == 0:
+        print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_name))
+
+    print("\n[*] Showing processes for user {0} -> id: {1}.".format(user_name, user_id))
+    print("[*] Last write time: {0}".format( processes_info[0]))
+    print("[!!] Process are shown from most recent to the older one.\n")
+
+    newline_countdown = 1
+    for process in processes_info[1]:
+        print("\t[*] Process info:", process)
+
+        if newline_countdown == 3:
+            print()
+            newline_countdown = 0
+        
+        newline_countdown += 1
+
+if __name__ == '__main__':
+    verbose = False
+
+    if "-v" in sys.argv:
+        verbose = True
+    
+    if len(sys.argv) < 2:
+        print_all_users_lpids(verbose)
+
+    else:
+        print_single_user_lpd(sys.argv[1], verbose)
