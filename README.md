@@ -13,7 +13,7 @@ Retrieve information of the last connected networks, querying the values from th
 *HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged* key. 
 To read that key, you need to execute the script with *administrator* privileges.
 
-### Syntax
+### Usage
 **Note**: The script prints the date in the **UTC** format.
 
 ```
@@ -29,7 +29,7 @@ python networkList.py
 Retrieve information of the previously connected usb devices, querying the values of the keys stored in the 
 *HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR* and the *HKLM\SYSTEM\CurrentControlSet\Control\DeviceClasses*.
 
-### Syntax
+### Usage
 **Note**: The extra information field, has information regarding if the device has a serial number or if the system created it.
 
 ```
@@ -51,7 +51,7 @@ python usbAttached.py
 
 Retrieve information of the Most Recent opened files by the specified user or by all the users.
 
-### Syntax
+### Usage
 
 ```
 python usersMRUList.py user_name
@@ -86,7 +86,7 @@ python usersMRUList.py
 Retrieve information of the last processes executed by the specified user or by all users.
 
 
-### Syntax
+### Usage
 
 ```
 python userLastPID.py user_name
@@ -100,7 +100,7 @@ python userLastPID.py user_name
 **Or**
 
 ```
-python userLastPID.py user_name
+python userLastPID.py
 [*] Showing last executed processes of user 'user_name' -> id: 'user id'
 [+] Last write time: 'Week day name' 'Month name' 'Month' HH:MM:SS 'Year' UTC
 [!!] Files are shown from the most recent to the oldest one.
