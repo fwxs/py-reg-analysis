@@ -79,7 +79,7 @@ def user2sid(user_name):
                 user_name_index = profile_image_path.rfind("\\") + 1
 
                 # Return the user identification if it matches the provided user name
-                if user_name.lower() in profile_image_path[user_name_index:].lower():
+                if user_name.lower() == profile_image_path[user_name_index:].lower():
                     return key_name
 
 
@@ -136,3 +136,62 @@ def parse_mru_inx(mru_list_ex):
         file_inx.append(sum([chunk[inx]  for inx in range(4)]))
 
     return file_inx
+
+
+def get_normal_user_name(user_sid):
+    """
+        Return the name of a non-system user, based on it's sid.
+        @param: user_sid: Windows user identifier.
+    """
+    user_name = None
+    try:
+        path = "{0}\\Volatile Environment".format(user_sid)
+        with reg.OpenKeyEx(reg.HKEY_USERS, path) as key:
+            user_name = reg.QueryValueEx(key, "USERNAME")[0]
+    
+    except FileNotFoundError:
+        pass
+    
+    except Exception as e:
+        raise Exception(e)
+
+    return user_name
+
+
+def get_system_user_name(user_sid):
+    """
+        Return the name of a system user, based on it's sid.
+        @param: user_sid: Windows user identifier.
+    """
+    user_name = None
+    try:
+        path = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\{0}".format(user_sid)
+        with reg.OpenKeyEx(reg.HKEY_LOCAL_MACHINE, path) as key:
+            user_name = reg.QueryValueEx(key, "ProfileImagePath")[0]
+
+            # String index of the '\' character.
+            inx = user_name.rfind("\\") + 1
+
+            # Where does starts the name of the user.
+            user_name = user_name[inx:]
+    
+    except FileNotFoundError:
+        pass
+    
+    except Exception as e:
+        raise Exception(e)
+
+    return user_name
+
+
+def get_user_name(user_sid):
+    """
+        Returns if the user sid belongs to a system user or to a non-system user.
+        @param user_sid: Windows-user identification.
+    """
+    user_type, user_name = "Non-system", get_normal_user_name(user_sid)
+
+    if user_name is None:
+        user_type, user_name = "System", get_system_user_name(user_sid)
+    
+    return user_type, user_name
