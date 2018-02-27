@@ -110,7 +110,7 @@ def print_all_users_mru():
             print("It seems that {0} doesn't have a 'most recent files' history.".format(user_sid))
             continue
 
-        print("[*] Showing MRU docs for user {0}".format(user_sid))
+        print("[*] Showing MRU docs of user {0}".format(user_sid))
         print("[+] Last modified date of the root key:", mru_user_data[1])
 
         for key, value in mru_user_data[0].items():
@@ -134,9 +134,9 @@ def print_single_user_mru(user_name):
 
     if len(mru_user_data[0]) == 0:
         print("It seems that {0} doesn't have a 'most recent files' history.".format(user_id))
-        sys.exit()
+        return False
 
-    print("[*] Showing MRU docs for user '{0}' -> id: {1}".format(user_name, user_id))
+    print("[*] Showing MRU docs of user '{0}' -> id: {1}".format(user_name, user_id))
     print("[+] Last modified date of the root key:", mru_user_data[1])
 
     for key, value in mru_user_data[0].items():

@@ -83,7 +83,7 @@ def print_all_users_lpids(verbose):
             print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_sid))
             continue
 
-        print("\n[*] Showing processes for user {0}.".format(user_sid))
+        print("\n[*] Showing last executed processes of user {0}.".format(user_sid))
         print("[*] Last write time: {0}".format( processes_info[0]))
         print("[!!] Process are shown from most recent to the older one.\n")
 
@@ -110,14 +110,15 @@ def print_single_user_lpd(user_name, verbose):
 
     if len(processes_info[1]) == 0:
         print("[!!] Looks like user {0} doesn't have a last PID list.\n".format(user_name))
+        return False
 
-    print("\n[*] Showing processes for user {0} -> id: {1}.".format(user_name, user_id))
+    print("\n[*] Showing last executed processes of user {0} -> id: {1}.".format(user_name, user_id))
     print("[*] Last write time: {0}".format( processes_info[0]))
     print("[!!] Process are shown from most recent to the older one.\n")
 
     newline_countdown = 1
     for process in processes_info[1]:
-        print("\t[*] Process info:", process)
+        print("\t[*] Process name:", process)
 
         if newline_countdown == 3:
             print()
@@ -125,14 +126,14 @@ def print_single_user_lpd(user_name, verbose):
         
         newline_countdown += 1
 
+
 if __name__ == '__main__':
     verbose = False
 
     if "-v" in sys.argv:
         verbose = True
     
-    if len(sys.argv) < 2:
-        print_all_users_lpids(verbose)
-
-    else:
+    if len(sys.argv) > 2:
         print_single_user_lpd(sys.argv[1], verbose)
+    else:
+        print_all_users_lpids(verbose)
