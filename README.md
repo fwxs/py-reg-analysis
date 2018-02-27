@@ -106,7 +106,7 @@ python userLastPID.py user_name
 [!!] Files are shown from the most recent to the oldest one.
     [+] Process name: process name
     ...
-```
+...
 ```
 
 **Note**: If '-v' is provided after the username or without it, it'll retrieve a sanitized raw version of the process key value.
@@ -131,5 +131,5 @@ python userLastPID.py -v
     [+] Process name: 'process name'
         [-] Verbose data: 'data'
     ...
-```
+...
 ```
