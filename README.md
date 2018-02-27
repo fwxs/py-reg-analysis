@@ -112,7 +112,7 @@ python userLastPID.py user_name
 **Note**: If '-v' is provided after the username or without it, it'll retrieve a sanitized raw version of the process key value.
 
 ```
-python userLastPID.py user_name -v
+python userLastPID.py -u user_name -v
 [*] Showing last executed processes of user 'user_name' -> id: 'user id'
 [+] Last write time: 'Week day name' 'Month name' 'Month' HH:MM:SS 'Year' UTC
 [!!] Files are shown from the most recent to the oldest one.
