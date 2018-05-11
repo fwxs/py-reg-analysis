@@ -7,7 +7,6 @@ __email__ = "mrpacmanator at gmail dot com"
 __version__ = "v1.1"
 
 
-
 def decode_mac_address(encoded_mac_address):
     """ Returns a readable MAC Address. """
     return ":".join(["{:02x}".format(ch) for ch in encoded_mac_address])
